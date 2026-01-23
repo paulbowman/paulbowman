@@ -1,18 +1,22 @@
-async function verifyTurnstile({ token, secret, ip }) {
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+async function sendMail({ to, from, fromName, subject, text, replyTo }) {
+  const payload = {
+    personalizations: [{ to: [{ email: to }] }],
+    from: { email: from, name: fromName || "Website Contact" },
+    subject,
+    content: [{ type: "text/plain", value: text }],
+    reply_to: replyTo,
+  };
+
+  const res = await fetch("https://api.mailchannels.net/tx/v1/send", {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      secret,
-      response: token,
-      remoteip: ip || "",
-    }),
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
   });
-  return res.json();
+
+  return res;
 }
 
 export async function onRequestGet({ request }) {
-  // Make visiting /api/contact in a browser not look broken
   return Response.redirect(new URL("/", request.url).toString(), 302);
 }
 
@@ -26,27 +30,24 @@ export async function onRequestPost({ request, env }) {
     return new Response("Missing required fields.", { status: 400 });
   }
 
-  // Turnstile verification (recommended)
-  if (!env.TURNSTILE_SECRET) {
-    return new Response("Server misconfigured (missing TURNSTILE_SECRET).", { status: 500 });
-  }
+  // (optional) Turnstile verification would go here
 
-  const token = String(form.get("cf-turnstile-response") || "");
-  if (!token) {
-    return new Response("Captcha missing. Please try again.", { status: 403 });
-  }
+  const subject = `New message from ${env.SITE_NAME || "paulbowman.us"}`;
+  const text = `Name: ${name}\nEmail: ${email}\n\n${message}\n`;
 
-  const ip = request.headers.get("CF-Connecting-IP") || "";
-  const verify = await verifyTurnstile({
-    token,
-    secret: env.TURNSTILE_SECRET,
-    ip,
+  const sendRes = await sendMail({
+    to: env.TO_EMAIL,
+    from: env.FROM_EMAIL,
+    fromName: env.FROM_NAME || "Paul Bowman",
+    subject,
+    text,
+    replyTo: { email, name },
   });
 
-  if (!verify.success) {
-    return new Response("Captcha failed. Please try again.", { status: 403 });
+  if (!sendRes.ok) {
+    const err = await sendRes.text();
+    return new Response(`Email send failed.\n\n${err}`, { status: 502 });
   }
 
-  // For now, just redirect (proves Turnstile works)
   return Response.redirect(new URL("/thanks.html", request.url).toString(), 303);
 }
