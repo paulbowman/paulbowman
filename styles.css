@@ -23,6 +23,8 @@
 
   --radius: 6px;
   --transition: 0.2s ease;
+
+  --header-height: 72x;
 }
 
 /* ---- Reset / Base ---- */
@@ -34,6 +36,11 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+
+:target {
+  scroll-margin-top: var(--header-height);
 }
 
 body {
@@ -131,6 +138,7 @@ p {
   position: sticky;
   top: 0;
   z-index: 50;
+  height: var(--header-height);
   background: rgba(248, 249, 250, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border-light);
@@ -265,7 +273,7 @@ p {
 
 /* ---- Hero ---- */
 .hero {
-  padding: 84px 0 56px;
+  padding: 28px 0 56px;
 }
 
 .kicker {
@@ -303,7 +311,7 @@ p {
 }
 
 .button.secondary {
-  border-color: var(--border-light);
+  border-color: var(--text-primary);
   color: var(--text-primary);
 }
 
@@ -385,6 +393,8 @@ input, textarea {
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
   font-family: var(--font-body);
+  font-size: 12pt;
+  line-height: 1.4;
   margin-bottom: 16px;
   background: #fff;
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -436,7 +446,7 @@ textarea:focus {
 }
 
 @media (max-width: 420px) {
-  .hero { padding: 64px 0 44px; }
+  .hero { padding: 20px 0 44px; }
   .button { width: 100%; text-align: center; }
 }
 
